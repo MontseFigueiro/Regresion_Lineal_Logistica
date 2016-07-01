@@ -2,7 +2,7 @@
 title: "Regresión Lineal Logística"
 author: "Montse Figueiro"
 date: "28 de junio de 2016"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -579,6 +579,8 @@ Modelo Poisson quitando las variables instant, dteday, casual y registered
 ````{r}
 model_poisson=glm(cnt~.-instant-dteday-casual-registered, family=poisson(link = "log"),data=BICIS) #a la funcion lineal se le aplica la exponencial,que transforma los valores de 0 a positivo, lo transforma a unos valores positivos
 summary(model_poisson)
+model_poisson
+plot(model_poisson)
 ```
 
 Todas las variables son significativas menos temp.
@@ -591,6 +593,17 @@ STC=sum((BICIS$cnt-mean(BICIS$cnt))^2)
 R2=1-(SCE/STC)
 R2
 ```
+Interpretación del resultado: El 37.94% de la varianza de cnt está explicada por las variables de nuestro
+modelo, la varianza residual es de 62,06%.
+
+R2 = Varianza Explicada / Total Varianza
+
+* possibility 1
+R2 <- cor(y,predict(mod))^2
+
+* possibility 2
+R2 <- 1 - (sum((y-predict(mod))^2)/sum((y-mean(y))^2))
+
 ##Formateo variables
 ```{r}
 BICIS=read.csv("hour.csv")
@@ -618,6 +631,8 @@ summary(model_poisson)
 Quitando working day mi indice AIC es el mismo.
 
 ```{r}
+BICIS$cnt
+BICIS$prediccion
 BICIS$prediccion=predict(model_poisson,type="response")
 SCE=sum((BICIS$cnt-BICIS$prediccion)^2)
 STC=sum((BICIS$cnt-mean(BICIS$cnt))^2)
