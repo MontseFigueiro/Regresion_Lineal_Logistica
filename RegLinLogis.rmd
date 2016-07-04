@@ -1,0 +1,689 @@
+---
+title: "Regresión Lineal Logística"
+author: "Montse Figueiro"
+date: "28 de junio de 2016"
+output: md_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Machine Learning vs Análisis Estadístico
+
+Ejemplo pricing de una empresa: si quiero optimizar precios sera machine learning (no puedo interpretar coeficientes del modelo como en Analisis Estadístico). En machine learning hago pruebas de estabilidad 
+(cambio en training)
+Si quieres algo que prediga directamente utilizas Machine Learning.  
+
+Si quieres entender porque ocurren las cosas y como se interpretan las cosas....Análisis estadístico.
+(como se fija y porque, por ejemplo, para explicar a un cliente) 
+
+Modelos machine learning y Analisis Estadísticos no son los mismo.   
+
+Tenemos: 
+
+* Modelo, saco coeficientes según que minimizo, no hay un modelo hay muchos modelos, hay diferentes coeficientes
+según si minimizo error, max beneficios, minimiza error cuadrado....
+a partir de esa formula predecimos.
+* Estimación
+* Explotación
+
+Analisis Estadístico
+
+Regresión lineal: me interesan las variables que pueda controlar, sobre las que pueda hacer algun cambio para mejorar el resultado. 
+
+Hipótesis: creo que si bajo el precio subirán las ventas un 20%, hago un experimento y saco mi conclusion al 95%
+
+Las variables tienen que ser independientes, la varianza tiene que ser igual para todas las observaciones, los errores tienen distribucion normal.
+
+Si no se cumple lo anterior la interpretación nos dará datos pero no será completamente correcto. Pero a veces es mejor tener esta información a nada.
+
+Estimación: MCO minimos cuadrados, el valor que tenía menos el valor que tiene por las variables predictivas. El 
+error es la realidad menos la estimación. Lo elevo al cuadrado para que los negativos y positivos no se compensen.
+Busco el valor de "a"(coeficientes) que haga que eso sea más pequeño.(Los coeficientes solo son insesgados en MCO, el valor aprox el limite al valor real)
+Si utilizo  valores absolutos me dará otros coeficientes.
+
+RSA casos que no se pueden resolver. Buscar un password, hay tantas combinaciones que la tecnologia no lo permite.
+
+gradient accent:busca optimos locales, iterando, tenga la forma que tenga la funcion, siempre te da algo.
+
+Descomposición de la varianza:
+
+Quiero calcular las variaciones de y (variable dependiente), tenemos la varianza de y, tengo la varianza del
+error. 
+varianza y = varianza modelo + varianza error
+
+
+varianza del modelo/varianza y = % coef denominacion que pocentaje de y está representado en el modelo
+
+Hay que poner un criterio, entre que porcentaje tiene que estar. Hay cosas que serán totalmente subjetivos.
+Si todas las variables que tu quieres estudiar están en el modelo, para ti estará bien aunque salga error alto.
+
+Ejemplo Regresion lineal: lm(cantidad~Precio,data=ventas)
+
+Tengo que saber en que unidades estanlas variables, miles.... Tiene que tener sentido el modelo, puede no ser
+lineal.
+
+std.error si es igual que a, mal asunto es error es igual que el coeficiente. (cuando hago el lm)
+
+t value es el coef entre estimate/15.778 o lo que es lo mismo a/std.error . El p valor es la probabilidad que sea mayor que el valor absoluto de t value.
+
+Multiple R-squared:0.8233 el modelo ajusta el 0.82%, y está representado en el modelo este porcentaje (coef.determinacion)
+
+Adjusted R-squered: Te penalizaa por no tener algun parametro. Pero te da una ganancia. La gente se suele fijar en éste.N registros,K variables. Si aumento K le cociente es más grande
+
+F-statistic: contraste de todo el modelo. el modelo sirve para algo?? compara modelos, mejora tener el modelo
+solo de la constante. p-value es menor de 0.01, aporta algo.
+
+El contraste F te permite comparar un modelo con el siguiente, el primero tiene solo una variable, añado otra, 
+entonces comparo los dos para ver si me sirve o no meter esa variable.
+
+# Práctica Regresión Lineal
+
+Iniciamos librerias:
+
+```{r,error=FALSE,warning=FALSE}
+library(ggplot2)
+library(effects)
+library(plyr)
+library(ROCR)
+```
+Carga de datos:
+```{r}
+creditos=read.csv("D:/master/data/Regresiones/creditos.csv",stringsAsFactors = FALSE)
+```
+Revisión de los datos:
+
+* income es salario hora
+* product contratados por el cliente
+* educacion años educacion, cuantos mas mas educacion
+* Balance saldo cuenta cliente
+```{r}
+str(creditos)
+head(creditos)
+tail(creditos)
+summary(creditos)
+```
+
+Tratamiento de variables:
+
+La regresion lineal y logistica trabaja con Factores
+El coef sobre la variable Educacion no es continua, aplico el mismo coeficiente
+a cada año que tengo de mas de educacion b1*x1, pero no es lo mismo 10 años
+que 11 que he terminado.(eso sería tratarlo como una variable continua)
+
+```{r}
+creditos$Gender=as.factor(creditos$Gender)
+creditos$Mortgage=as.factor(creditos$Mortgage)
+creditos$Married=as.factor(creditos$Married)
+creditos$Ethnicity=as.factor(creditos$Ethnicity)
+
+summary(creditos)
+```
+*Test diferencia de medias Regresion lineal:*
+```{r}
+head(creditos)
+t.test(Income ~ Gender, data = creditos)#p-value=0.7345 t=0.3395,mean female=43,46, male=44,8
+```
+calculo t-student:
+```{r}
+male <- creditos[creditos$Gender==" Male",]
+female <- creditos[creditos$Gender=="Female",]
+meanmale <- mean(male$Income)#44.80207
+meanfemale <- mean(female$Income)#43.46693
+n1 <- nrow(male)#132
+n2 <- nrow(female) #168
+var1 <- var(male$Income)
+var2 <- var(female$Income)
+ds1 <- sd(male$Income)# 33.43763
+ds2 <- sd(female$Income)
+```
+###Cálculo T-student 1:
+Diferentes tamaños muestrales, iguales varianzas:
+```{r}
+sxx <- sqrt((((n1-1)*var1)+((n2-1)*var2))/(n1+n2-2))
+raiz <- sqrt((1/n1)+(1/n2))
+t <- (meanmale-meanfemale)/(sxx*raiz)
+t
+```
+###Prueba t de Welch:
+Diferentes tamaños muestrales, diferentes varianzas:
+```{r}
+sx1x2 <- sqrt((var1/n1)+(var2/n2))
+t <- (meanmale-meanfemale)/(sx1x2)
+t
+```
+Resultado:
+**No hay evidencia significativa de que sean diferentes. No podemos rechazar la igualdad de las medias**
+
+
+*Modelo Lineal* 
+En este caso, el R² es simplemente el cuadrado del coeficiente de correlación de Pearson, lo cual es sólo cierto para la regresión lineal simple
+```{r}
+modeloT=lm(Income ~ Gender, data = creditos)
+summary(modeloT)
+```
+
+Recta de regresión es y= 44.802 - 1.335*x (x=1 cuando es mujer, 0 cuando es hombre)
+std-error= 2.952
+p-value=0.7352
+cuando x=1, y =43,46
+Podría coger otro modelo e ir metiendo variables, el modelo perfecto es el que las variables fueran independientes
+si no lo son te generan ruido, cuando sube una baja la otra. 
+Resultado:
+
+**No aporta nada este modelo casi es el valor de la constante.**
+
+##Regresión Lineal Individual
+
+Mide correlacion, no mide causa-efecto. Está relacionado, ejemplo, la edad influye en el impago, con la edad
+gana más dinero, lo que influye no es la edad es el ingreso...Si metes la variable ingreso la edad desaparece.
+Vamos viendo una a una las variables:
+```{r}
+modeloInd1=lm(Income ~ Rating, data = creditos)# Rating es Puntuaje sobre la capacidad impago 
+#de 0-1000, cuanto mas grande mejor pagador.
+summary(modeloInd1)#el rating explica el 60% de los ingresos o los ingresos explican el 60% del 
+#rating
+```
+```{r}
+modeloInd2=lm(Income ~ Products, data = creditos)#no influye
+summary(modeloInd2)
+```
+```{r}
+modeloInd3=lm(Income ~ Age, data = creditos)
+summary(modeloInd3)
+```
+```{r}
+modeloInd4=lm(Income ~ Education, data = creditos)#p-value 0.22 no es significativo
+summary(modeloInd4)
+```
+```{r}
+modeloInd5=lm(Income ~ Gender, data = creditos)
+summary(modeloInd5)
+```
+```{r}
+modeloInd6=lm(Income ~ Mortgage, data = creditos)#no influye la hipoteca
+summary(modeloInd6)
+```
+```{r}
+modeloInd7=lm(Income ~ Married, data = creditos)
+summary(modeloInd7)
+```
+```{r}
+modeloInd8=lm(Income ~ Ethnicity, data = creditos)
+summary(modeloInd8)
+```
+```{r}
+modeloInd9=lm(Income ~ Balance, data = creditos)#si influye, y explica el 0.1869 del income
+summary(modeloInd9)
+```
+
+
+
+##Regresión Linial Múltiple
+
+Introduzco todas las variables, ahora la hipoteca si que influye, porque las variables no son independientes
+a igualdad de todas las variables, los que tienen hipoteca tendrán menos saldo, menor rating....efectos conjuntos.
+Hemos capturado el 0.8965 del Income, todas las variables explican el 89,65 % de los ingresos. Multiple R-Squared.
+vamos a quitar el resto de las variables(menos rating, Balance y Mortgage), para ver las diferencias....
+
+```{r}
+modeloMul1=lm(Income ~ ., data = creditos)
+summary(modeloMul1)
+```
+
+Multiple R-squared:
+
+Múltiple R-cuadrado se utiliza para evaluar como el modelo se ajusta a los datos. Te dice cuánto de la variación en la variable dependiente ( la variable predicha ) puede ser explicado por las variables independientes ( las variables de predicción ). Por ejemplo, un R valor de 0.75 -squared implica que el modelo puede explicar las tres cuartas partes de la variación en el resultado. Ahora, para entender la diferencia entre ellos, es importante saber que cada vez que se agrega una variable independiente al modelo , el valor R-cuadrado se incrementará . Porqué es eso ? Debido a que el modelo trata de capturar tanto la información como cualquier ruido en la nueva variable. No sabemos si el aumento en el valor R cuadrado es debido a la capacidad de predicción real de la nueva variable o debido a la casualidad. Ajustado R-cuadrado también proporciona la misma información que R cuadrado, pero se ajusta para el número de términos en el modelo. No aumenta monótonamente como R-cuadrado, pero sólo aumenta cuando la nueva variable en realidad tiene un efecto sobre el valor predicho. Se disminuye cuando la nueva variable no tiene ningún impacto real sobre el valor predicho.
+
+R <- 0.8965
+N <- 300
+p <- 10
+
+Radj <- 1-(((1-R)*(N-1))/(N-p-1))
+
+##Comparación de modelos
+
+Comparamos el Income con el Rating y el Income con el Rating y todas las demás.El Rating explicaba el 60% del Income.
+modeloInd1=lm(Income ~ Rating, data = creditos)
+modeloMul1=lm(Income ~ ., data = creditos)
+```{r}
+anova(modeloInd1,modeloMul1)
+#sale que tiene sentido
+```
+* Sum of squares 
+* df:degrees of freedom
+* RSS: Sum squares
+* F:F- ratio
+* Pr(>F):p-value menor que 0.05
+
+##¿Cuales serian las variables que incluiriamos en el modelo?
+
+```{r}
+modeloMul2=lm(Income ~Rating+Balance+Mortgage, data = creditos)
+summary(modeloMul2)
+```
+Estas tres variables explican el 89.55%  de la varianza del Income.
+39.8 mas de income el que tiene hipoteca con respecto al que no. El dato que sale es con respecto a los que no tienen hipoteca.
+
+```{r}
+anova(modeloInd1,modeloMul2)
+```
+La suma de cuadrados es casi igual que cuando comparamos anteriormente con todas las variables. 
+
+```{r}
+anova(modeloMul2,modeloMul1)
+```
+Comparamos el modelo con las 3 variables con respecto al modelo que las incluía todas. No aporta ninguna información.
+No aporta nada el modelo Mul1 al modelo Mul2, si no fuera así hay una variable que se escapa.
+
+
+#Análisis del Modelo
+```{r}
+modeloFinal=lm(Income ~ Rating+Mortgage+Balance, data = creditos)
+summary(modeloFinal)
+```
+```{r}
+plot(modeloFinal$residuals)
+```
+```{r}
+hist(modeloFinal$residuals)
+```
+```{r}
+qqnorm(modeloFinal$residuals); qqline(modeloFinal$residuals,col=2)
+```
+Gráfico de percentiles tienen que estar todos en la recta si es normal
+vemos que en las colas hay problemas. No vale la regressión lineal, no es insesgada,el valor de la poblacion no
+se estima de manera exacta con el coeficiente.
+```{r}
+confint(modeloFinal,level=0.95)
+```
+Indicamos al nivel que queremos los intervalos de confianza, entre que rangos van los coeficientes.
+
+```{r}
+anova(modeloFinal,modeloMul1)
+```
+Modelo Final comparado con modelo con todas las variables. El resultado es que el modelo con todas no aporta
+nada al modelo Final.
+
+Los que tienen hipoteca no los estima tan bien, las rectas son muy buenas en los centros, em los bordes no, no valen para predecir.
+
+hay diferencias en las pendientes, por eso sale significativa mortgage
+```{r}
+ggplot(creditos, aes(x = Rating, y = Income)) + geom_point() + facet_grid(~ Mortgage) + 
+  geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
+```
+mas o menos todas se solapan por eso en el modelo no son significativas, no es conjunto aquí no tenemos en cuenta el resto de variables
+```{r}
+ggplot(creditos, aes(x = Rating, y = Income)) + geom_point() + facet_grid(~ Ethnicity) + 
+  geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
+```
+
+```{}
+ggplot(creditos, aes(x = Balance, y = Income)) + geom_point() + facet_grid(~ Mortgage) + 
+  geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
+```
+```{r}
+ggplot(creditos, aes(x = Balance, y = Income)) + geom_point() + facet_grid(~ Ethnicity) + 
+  geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
+```
+
+## Análisis de interacciones
+
+Ejemplo: Modelo ingresos dependen de y=a+b*sexo+c*estado civil, puedo inventarme una nueva variable d*sexo*Edad (este efecto estoy diciendo que la edad afecta conjuntamente con el sexo)
+```{r}
+modeloInter1=lm(Income ~ Balance+Rating*Mortgage+Balance:Mortgage, data = creditos)
+#con el : añado la variable sola
+summary(modeloInter1)
+```
+Influyen en Income el Balance, el Rating y el Mortgage.
+```{r}
+modeloInter2=lm(Income ~ Rating*Mortgage+Balance, data = creditos)
+summary(modeloInter2)
+```
+Si que encuentra relación entre Rating y Mortgage para explicar la varianza de Income.
+```{r}
+modeloInter3=lm(Income ~ Rating:Mortgage+Balance, data = creditos)
+summary(modeloInter3)
+```
+separo el efecto del rating en dos bloques si mortgage es no incrementa el raiting 0.39
+```{r}
+efecto1 <- effect("Rating*Mortgage", modeloInter1, xlevels = 10)
+plot(efecto1)#la diferencia es que aqui le metes el modelo, con lo que le metes las 
+#relaciones con todas las variables
+```{r}
+efecto2 <- effect("Balance*Mortgage", modeloInter1, xlevels = 10)
+plot(efecto2)
+```
+```{r}
+efecto3 <- effect("Rating*Mortgage", modeloInter2, xlevels = 10)
+plot(efecto3)
+```
+```{r}
+efecto4 <- effect("Rating:Mortgage", modeloInter3, xlevels = 10)
+plot(efecto4)
+```
+```{r}
+modeloInter5=lm(Income ~ Rating*Mortgage, data = creditos)
+summary(modeloInter5)
+```
+Aquí la hipoteca no representa nada en el Income
+```{r}
+efecto5 <- effect("Rating*Mortgage", modeloInter5, xlevels = 10)
+plot(efecto5)
+```
+
+##Analisis de variable Balance
+```{r}
+modeloBalance=lm(Balance ~ ., data = creditos)
+summary(modeloBalance)
+```
+Todas las variables explican el 95.21 del Balance. Income, Rating y Mortgage son representativas, Age un 0.0303
+de p-valor.
+
+##Variables que incluiriamos en el modelo
+```{r}
+modeloBalanceFin=lm(Balance ~ Income*Age+Rating+Mortgage, data = creditos)
+summary(modeloBalanceFin)
+```
+```{r}
+anova(modeloBalanceFin,modeloBalance)
+```
+p-valor de 0.9989 incluir el resto de variables no aporta nada al modelo anterior.
+
+# MODELOS LINEALES GENERALIZADOS: REGRESION LOGISTICA
+
+Modelo que se utiliza cuando la variable "y"" es dicotómica, si o no, true o false,bernuilli con probabilidad p.
+aplicaré la funcion sigmoide,el resultado es la probabilidad de ocurrencia, para cada familia de parametros 
+iniciales la probabilidad de que ocurra mi output. En los modelos de clasificacion todos cortan en el 0.5, acepto
++0.5. que hago entre 0.5 y 1?? minimizas el capital ponderado por riesgo. Buscas un óptimo de beneficio y coste.
+el modelo ordena y yo elijo donde corto.
+
+Máxima verosimilitud: para la regresion lineal si se cumple todo, MCO = max.verosimilitud
+insesgado:el metodo usado no se va a aproximar a la media poblacional.
+Máxima verosimilitud, me acepta un monton de modelos. Se minimizan los errores al cuadrado, hay un metodo
+iterativo de Nelder para encontrar los coeficientes mediante iteraciones.
+
+Matriz de confusión:
+mezcla la realidad con el modelo, sacamos una serie de ratios para medir como de bueno es el modelo.
+True positive rate  = TP/TP+FN (el porcentaje de los que hemos clasificado bien sobre el total de los que eran buenos)
+
+Curva ROC representa la seleccion del modelo, cuanto mas alta mejor el modelo, se calcula el area debajo de la curva. 
+cuanto mas cercano a 1 mejor, a 0.5 peor. Tengo que elegir el punto de corte. Mide la capacidad predictiva de unmodelo,se usa más en machine learning que en analisis estadístico.
+
+Comparativa modelos:
+
+* relativos:
+  R^2 ajustado (en regresion lineal)
+* absolutos:
+BIC bayesian  mide la verosimilitud (regresion linea,logistica,) siempre se elige el mas bajo.
+AIC akaike
+* Comparativos:
+Contraste F para comparar varios modelos
+
+Ejemplo regresión lineal generalizado:
+
+Nº VECES ALQUILA BICIS EN MES, NO PUEDE SER NORMAL PORQUE NO PUEDE SER NEGATIVO...
+
+##Carga de Datos
+campaña de venta de depósitos, la "y"" es si compra o no el depósito, el objetivo es quien va a contratar mi producto.
+```{r}
+BANK=read.csv2("bank-full.csv")
+```
+*datos extraidos de https://archive.ics.uci.edu/ml/datasets/Bank+Marketing*
+
+##Revisión Básica Dataset
+```{r}
+str(BANK)
+head(BANK)
+summary(BANK)
+```
+##Formateo de Variables
+
+```{r}
+BANK$day=as.factor(BANK$day)
+BANK$campaign=as.factor(BANK$campaign)
+BANK$IND_PREVIO=as.factor(as.numeric(BANK$pdays!=-1))
+```
+```{r}
+str(BANK)
+head(BANK)
+summary(BANK)
+```
+
+##Modelo de Regresión Logística
+```{r}
+model_logit=glm(y~., data=BANK,family=binomial(link="logit"))
+summary(model_logit)
+```
+Nos da un valor mucho mas pequeño de AIC 21507
+```{r}
+model_logit1=glm(y~job+marital+education+default+balance+housing+loan+contact+month+poutcome, data=BANK,family=binomial(link="logit"))
+summary(model_logit1)
+```
+Regresion logistica, es un modelo lineal igual que antes el coef de casados es -2.1, si hacemos e^-0.21 = 0.81,
+los casados tiene 1/0.81 = 1.23 tienen 1.23 veces mas de contratar los casados. Casado es igual a divorciado, soltero no es igual a divorciado hay que tener cuidado con el caso base, normalmente se pone el que tenga más registros. Cuando hay variables categoricas jugamos a cambiar el orden. las variables se estan comparando con una. Si cogemos como caso base el que tenga el coef mas pequeño conseguiremos que todos los coef sean positivos (ES LO MEJOR), se hace un relevel,ganas en interpretabilidad de los modelos.
+Intento no quitar variables porque luego puedo tener mas datos y a lo mejor tiene más importancia. Si no se
+como agruparlos los dejo separados. Aquí no hay R^2, maximizamos la verosimilitud, te compara el modelo Null. AIC cuanto más pequeño mejor.
+```{r}
+model_probit1=glm(y~job+marital+education+default+balance+housing+loan+contact+month+poutcome, data=BANK,family=binomial(link="probit"))
+summary(model_probit1)
+```
+el efecto es un poco diferente, lo que si que es igual es el signo. Es un poco mas pequeño el AIC del logit
+
+##Diferencia entre el logit y el probit
+```{r}
+X=seq(from=-4,to=4,by=0.1)
+sigmoide=1/(1+exp(-X))
+cumulative<-pnorm(X, 0, 1)
+plot(sigmoide,type="l",col="red")
+lines(cumulative,col="blue")
+```
+la roja es la sigmoide, es menos rigida. la azul se usa cuando quieres muy fiables y muy sensibles(medicina)
+
+##Evaluación del Modelo
+
+Me quedo con el modelo logit1 probablemente tendría que quitar variables, como evaluo? tengo un monton de 0 y 1,
+mi modelo me devuelve probabilidades.
+```{r}
+BANK$prediccion=predict(model_logit1,type="response")
+head(BANK$prediccion)
+```
+me puede dar el resultado despues de aplicar el sigmoide
+```{r}
+Pred_auxiliar= prediction(BANK$prediccion, BANK$y, label.ordering = NULL)
+auc.tmp = performance(Pred_auxiliar, "auc");
+auc_model_logit1_train = as.numeric(auc.tmp@y.values)
+auc_model_logit1_train #para medir la capacidad predictiva del modelo
+```
+```{r}
+CURVA_ROC_model_logit1_train <- performance(Pred_auxiliar,"tpr","fpr")
+```
+```{r}
+plot(CURVA_ROC_model_logit1_train,colorize=TRUE)
+abline(a=0,b=1)
+abline(v=0.5)
+```
+cuando corte en la curva estoy capturando el 0.5 de los positivos y el 0.1 de los negativos
+
+## Capacidad del Modelo
+```{r}
+mean(as.numeric(BANK$y)-1)
+```
+Restamos 1, porque al pasar a numerico me pone 2 y 1,  el 11% contratan de cada 100 que coja.
+```
+```{r}
+aggregate(BANK$prediccion~BANK$y,FUN=mean)
+```
+
+comparo las predicciones con respecto al modelo, a los que si han contratado mi modelo le da una probabilidad de 26%, le está dando más probabilidad a los que han contratado.
+
+##Puesta en valor de un modelo: Fijación del Threshold
+```{r}
+ALPHA=0.5
+Confusion=table(BANK$y,BANK$prediccion>=ALPHA)
+Confusion
+```
+BANK$prediccion son las probabilidades de que sean mayor que 0.5
+BANK$y tiene 5289 positivos, y 39922 negativos. En alpha=0.5, hay 951 True positive and 524 false positive
+
+```{r}
+Accuracy= (sum(BANK$y=="yes" & BANK$prediccion>=ALPHA)+sum(BANK$y=="no" & BANK$prediccion<ALPHA))/length(BANK$y)
+Accuracy
+```
+TruePositive+True Negative/TOTALobs, es el porcentaje de aciertos, aciertas un 89%
+
+###Precisión
+Precision is the number of True Positives divided by the number of True Positives and False Positives. Put another way, it is the number of positive predictions divided by the total number of positive class values predicted. It is also called the Positive Predictive Value (PPV).
+```{r}
+Precision=sum(BANK$y=="yes" & BANK$prediccion>=ALPHA)/sum(BANK$y=="yes")
+Precision
+```
+
+Recall is the number of True Positives divided by the number of True Positives and the number of False Negatives. Put another way it is the number of positive predictions divided by the number of positive class values in the test data. It is also called Sensitivity or the True Positive Rate.
+Recall 951/(951+524)
+
+```{r}
+recall=sum(BANK$y=="yes" & BANK$prediccion>=ALPHA)/sum(BANK$prediccion>=ALPHA)
+recall
+```
+
+La cobertura la han calculado como la precision:
+```{r}
+Cobertura=sum(BANK$y=="yes" & BANK$prediccion>=ALPHA)/sum(BANK$y=="yes")
+Cobertura
+```
+951/5289, Truepositive/suma todos los positivos BANK$y
+
+##Modificación de ALPHA
+Si bajamos alpha, la precision es peor, la cobertura es mayor. Tengo más errores en la tabla de confusión.
+
+
+##Criterio maximizar F1-Score
+
+En estadística análisis de clasificación binaria , la F 1 puntuación (también F-Resultado o F-medida ) es una medida de la exactitud de una prueba. Se considera tanto la precisión p y la retirada r de la prueba para calcular la puntuación: p es el número de resultados positivos correctos dividido por el número de todos los resultados positivos, y r es el número de resultados positivos correctos dividido por el número de positivos resultados que deberían haber sido devueltos. El F 1 puntuación puede ser interpretado como un promedio ponderado de la precisión y la recuperación , en donde un F 1 puntuación alcanza su mejor valor en 1 y lo peor a 0.
+
+```{r}
+Precisionf1 <- Precision
+Precisionf1
+Recallf1 <- recall
+Recallf1
+```
+```{r}
+F=2*((Precisionf1*Recallf1)/(Precisionf1+Recallf1))
+F
+```
+
+##Índice Fowlkes-Malvas
+
+Índice Fowlkes-Malvas [1] es una evaluación externa método que se utiliza para determinar la similitud entre dos agrupamientos (clusters obtenidos después de un algoritmo de agrupamiento). Esta medida de similitud podría ser o bien entre dos agrupamientos jerárquicos o de una agrupación, a la nomenclatura de referencia. Un valor más alto para el índice Fowlkes-Malvas indica una mayor similitud entre los clusters y las clasificaciones de referencia.
+
+```{r}
+FM=sqrt(Precisionf1*Recallf1)
+FM
+```
+
+#MODELOS LINIALES GENERALIZADOS: MODELO POISSON
+
+##Carga de Datos
+```{r}
+BICIS=read.csv("hour.csv")
+```
+
+*datos extraidos de https://archive.ics.uci.edu/ml/datasets/Bike+Sharing+Dataset*
+
+##Revisión básica dataset
+```{r}
+str(BICIS)
+head(BICIS)
+summary(BICIS)
+```
+##Modelos Regresión de Poisson
+```{r}
+hist(BICIS$cnt)
+mean(BICIS$cnt)
+sd(BICIS$cnt)
+```
+Modelo Poisson quitando las variables instant, dteday, casual y registered
+````{r}
+model_poisson=glm(cnt~.-instant-dteday-casual-registered, family=poisson(link = "log"),data=BICIS) #a la funcion lineal se le aplica la exponencial,que transforma los valores de 0 a positivo, lo transforma a unos valores positivos
+summary(model_poisson)
+model_poisson
+plot(model_poisson)
+```
+
+Todas las variables son significativas menos temp.
+
+```{r}
+BICIS$prediccion=predict(model_poisson,type="response") #prediccion valores con el modelo de poisson
+head(BICIS)
+SCE=sum((BICIS$cnt-BICIS$prediccion)^2) #suma cuadrado de los errores
+STC=sum((BICIS$cnt-mean(BICIS$cnt))^2) 
+R2=1-(SCE/STC)
+R2
+```
+Interpretación del resultado: El 37.94% de la varianza de cnt está explicada por las variables de nuestro
+modelo, la varianza residual es de 62,06%.
+
+R2 = Varianza Explicada / Total Varianza
+
+* possibility 1
+R2 <- cor(y,predict(mod))^2
+
+* possibility 2
+R2 <- 1 - (sum((y-predict(mod))^2)/sum((y-mean(y))^2))
+
+##Formateo variables
+```{r}
+BICIS=read.csv("hour.csv")
+```
+
+
+```{r}
+BICIS$season=as.factor(BICIS$season)
+BICIS$yr=as.factor(BICIS$yr)
+BICIS$mnth=as.factor(BICIS$mnth)
+BICIS$hr=as.factor(BICIS$hr)
+BICIS$holiday=as.factor(BICIS$holiday)
+BICIS$weekday=as.factor(BICIS$weekday)
+BICIS$workingday=as.factor(BICIS$workingday)
+BICIS$weathersit=as.factor(BICIS$weathersit)
+```
+```{r}
+model_poisson=glm(cnt~.-instant-dteday-casual-registered, family=poisson(link = "log"),data=BICIS)
+summary(model_poisson)
+```
+```{r}
+model_poisson=glm(cnt~.-workingday-instant-dteday-casual-registered, family=poisson(link = "log"),data=BICIS)
+summary(model_poisson)
+```
+Quitando working day mi indice AIC es el mismo.
+
+```{r}
+BICIS$prediccion=predict(model_poisson,type="response")
+SCE=sum((BICIS$cnt-BICIS$prediccion)^2)
+STC=sum((BICIS$cnt-mean(BICIS$cnt))^2)
+R2=1-sum((BICIS$cnt-BICIS$prediccion)^2)/sum((BICIS$cnt-mean(BICIS$cnt))^2)
+R2
+```
+## -------------------------------------------------------------------------
+
+COMO VALIDAS SI UN MODELO FUNCIONA:
+
+Realidad: tengo un historico de variables, hago un modelo, lo estimo, tengo la predicción, para gente nueva tengo
+mi predicción.
+A la gente que tengo prediccion Si, le voy a hacer campaña. Como evaluo la capacidad de la campaña?
+Clientes que tenías SI y le has hecho accion, ves el % exito entre..
+Clientes que tenias NO y no les has hecho acción, ves el % exito esto me da 4,7 
+Mi modelo tiene propensos SI y propensos NO, lo normal es hacer accion SI y accion NO. En este modelo no has
+incentivado al que no es propenso. Hay que hacer acción sobre el no propenso. El problema es el tamaño de no prepensos que incluyes.
+
+Calculas propensos Si con accion si / propensos Si accion no + Prop Si acc No/prop No Acc No
+
+Pasa un año, como entrenas el modelo dentro de un año cuando no funcione. Ya estan influenciado con la accion comercial puedo usar los que no he aplicado accion pero eran propensos.
+
+--------------------------------------------------------------------------------------------
+
+
+
+
