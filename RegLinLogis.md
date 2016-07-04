@@ -235,6 +235,23 @@ que 11 que he terminado.(eso sería tratarlo como una variable continua)
 
 *Test diferencia de medias Regresion lineal:*
 
+    head(creditos)
+
+    ##    Income Rating Products Age Education Gender Mortgage Married Ethnicity
+    ## 1  14.891    283        2  34        11   Male       No     Yes Caucasian
+    ## 2 106.025    483        3  82        15 Female      Yes     Yes     Asian
+    ## 3 104.593    514        4  71        11   Male       No      No     Asian
+    ## 4 148.924    681        3  36        11 Female       No      No     Asian
+    ## 5  55.882    357        2  68        16   Male       No     Yes Caucasian
+    ## 6  80.180    569        4  77        10   Male       No      No Caucasian
+    ##   Balance
+    ## 1     333
+    ## 2     903
+    ## 3     580
+    ## 4     964
+    ## 5     331
+    ## 6    1151
+
     t.test(Income ~ Gender, data = creditos)#p-value=0.7345 t=0.3395,mean female=43,46, male=44,8
 
     ## 
@@ -248,6 +265,40 @@ que 11 que he terminado.(eso sería tratarlo como una variable continua)
     ## sample estimates:
     ##  mean in group  Male mean in group Female 
     ##             44.80207             43.46693
+
+calculo t-student:
+
+    male <- creditos[creditos$Gender==" Male",]
+    female <- creditos[creditos$Gender=="Female",]
+    meanmale <- mean(male$Income)#44.80207
+    meanfemale <- mean(female$Income)#43.46693
+    n1 <- nrow(male)#132
+    n2 <- nrow(female) #168
+    var1 <- var(male$Income)
+    var2 <- var(female$Income)
+    ds1 <- sd(male$Income)# 33.43763
+    ds2 <- sd(female$Income)
+
+### Cálculo T-student 1:
+
+Diferentes tamaños muestrales, iguales varianzas:
+
+    sxx <- sqrt((((n1-1)*var1)+((n2-1)*var2))/(n1+n2-2))
+    raiz <- sqrt((1/n1)+(1/n2))
+    t <- (meanmale-meanfemale)/(sxx*raiz)
+    t
+
+    ## [1] 0.3384819
+
+### Prueba t de Welch:
+
+Diferentes tamaños muestrales, diferentes varianzas:
+
+    sx1x2 <- sqrt((var1/n1)+(var2/n2))
+    t <- (meanmale-meanfemale)/(sx1x2)
+    t
+
+    ## [1] 0.3394994
 
 Resultado: **No hay evidencia significativa de que sean diferentes. No
 podemos rechazar la igualdad de las medias**
@@ -681,15 +732,15 @@ Análisis del Modelo
 
     plot(modeloFinal$residuals)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-22-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-25-1.png)
 
     hist(modeloFinal$residuals)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-23-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-26-1.png)
 
     qqnorm(modeloFinal$residuals); qqline(modeloFinal$residuals,col=2)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-24-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-27-1.png)
 Gráfico de percentiles tienen que estar todos en la recta si es normal
 vemos que en las colas hay problemas. No vale la regressión lineal, no
 es insesgada,el valor de la poblacion no se estima de manera exacta con
@@ -728,14 +779,14 @@ hay diferencias en las pendientes, por eso sale significativa mortgage
     ggplot(creditos, aes(x = Rating, y = Income)) + geom_point() + facet_grid(~ Mortgage) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-27-1.png) mas
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-30-1.png) mas
 o menos todas se solapan por eso en el modelo no son significativas, no
 es conjunto aquí no tenemos en cuenta el resto de variables
 
     ggplot(creditos, aes(x = Rating, y = Income)) + geom_point() + facet_grid(~ Ethnicity) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-28-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-31-1.png)
 
     ggplot(creditos, aes(x = Balance, y = Income)) + geom_point() + facet_grid(~ Mortgage) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
@@ -743,7 +794,7 @@ es conjunto aquí no tenemos en cuenta el resto de variables
     ggplot(creditos, aes(x = Balance, y = Income)) + geom_point() + facet_grid(~ Ethnicity) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-29-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-32-1.png)
 
 Análisis de interacciones
 -------------------------
@@ -840,24 +891,24 @@ el raiting 0.39
     efecto1 <- effect("Rating*Mortgage", modeloInter1, xlevels = 10)
     plot(efecto1)#la diferencia es que aqui le metes el modelo, con lo que le metes las 
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-33-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-36-1.png)
 
     #relaciones con todas las variables
 
     efecto2 <- effect("Balance*Mortgage", modeloInter1, xlevels = 10)
     plot(efecto2)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-34-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-37-1.png)
 
     efecto3 <- effect("Rating*Mortgage", modeloInter2, xlevels = 10)
     plot(efecto3)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-35-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-38-1.png)
 
     efecto4 <- effect("Rating:Mortgage", modeloInter3, xlevels = 10)
     plot(efecto4)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-36-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-39-1.png)
 
     modeloInter5=lm(Income ~ Rating*Mortgage, data = creditos)
     summary(modeloInter5)
@@ -888,7 +939,7 @@ Aquí la hipoteca no representa nada en el Income
     efecto5 <- effect("Rating*Mortgage", modeloInter5, xlevels = 10)
     plot(efecto5)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-38-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-41-1.png)
 
 Analisis de variable Balance
 ----------------------------
@@ -1479,7 +1530,7 @@ Diferencia entre el logit y el probit
     plot(sigmoide,type="l",col="red")
     lines(cumulative,col="blue")
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-49-1.png) la
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-52-1.png) la
 roja es la sigmoide, es menos rigida. la azul se usa cuando quieres muy
 fiables y muy sensibles(medicina)
 
@@ -1510,7 +1561,7 @@ me puede dar el resultado despues de aplicar el sigmoide
     abline(a=0,b=1)
     abline(v=0.5)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-53-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-56-1.png)
 cuando corte en la curva estoy capturando el 0.5 de los positivos y el
 0.1 de los negativos
 
@@ -1741,7 +1792,7 @@ Modelos Regresión de Poisson
 
     hist(BICIS$cnt)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-66-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-69-1.png)
 
     mean(BICIS$cnt)
 
@@ -1812,7 +1863,7 @@ registered
 
     plot(model_poisson)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-67-1.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-67-2.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-67-3.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-67-4.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-70-1.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-70-2.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-70-3.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-70-4.png)
 
 Todas las variables son significativas menos temp.
 

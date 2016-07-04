@@ -2,7 +2,7 @@
 title: "Regresión Lineal Logística"
 author: "Montse Figueiro"
 date: "28 de junio de 2016"
-output: md_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -122,7 +122,36 @@ summary(creditos)
 ```
 *Test diferencia de medias Regresion lineal:*
 ```{r}
+head(creditos)
 t.test(Income ~ Gender, data = creditos)#p-value=0.7345 t=0.3395,mean female=43,46, male=44,8
+```
+calculo t-student:
+```{r}
+male <- creditos[creditos$Gender==" Male",]
+female <- creditos[creditos$Gender=="Female",]
+meanmale <- mean(male$Income)#44.80207
+meanfemale <- mean(female$Income)#43.46693
+n1 <- nrow(male)#132
+n2 <- nrow(female) #168
+var1 <- var(male$Income)
+var2 <- var(female$Income)
+ds1 <- sd(male$Income)# 33.43763
+ds2 <- sd(female$Income)
+```
+###Cálculo T-student 1:
+Diferentes tamaños muestrales, iguales varianzas:
+```{r}
+sxx <- sqrt((((n1-1)*var1)+((n2-1)*var2))/(n1+n2-2))
+raiz <- sqrt((1/n1)+(1/n2))
+t <- (meanmale-meanfemale)/(sxx*raiz)
+t
+```
+###Prueba t de Welch:
+Diferentes tamaños muestrales, diferentes varianzas:
+```{r}
+sx1x2 <- sqrt((var1/n1)+(var2/n2))
+t <- (meanmale-meanfemale)/(sx1x2)
+t
 ```
 Resultado:
 **No hay evidencia significativa de que sean diferentes. No podemos rechazar la igualdad de las medias**
