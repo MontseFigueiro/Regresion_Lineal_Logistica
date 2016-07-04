@@ -1,0 +1,427 @@
+---
+title: "Aprendizaje no supervisado"
+author: "Montse Figueiro"
+date: "30 de junio de 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##APRENDIZAJE NO SUPERVISADO
+
+En aprendizaje supervisado, tenemos un output, conozco lo que quiero estimar. Puede pasar que no tenga claro que es lo que quiero estimar y quiero encontrar patrones dentro de esa información.
+
+* Clustering:
+
+Coge todos los registros e intenta agruparlos por similitud. El algoritmo intente buscar gente que se parezca, según la información que tenga.
+
+* Clustering jerarquico:
+
+El mas sencillo, vamos a hacer agrupamiento, tenemos todos los registros, agrupamos en función de los que estén más proximos, puede tener 20, 40 metodos...
+Tengo los puntos, defino la distancia entre ellos. Según la distancia que elija me saldrá una distancia u otra, lo importante es saber cual es el problema de negocio. Voy juntando de dos en dos, una vez que tengo las parejas trazo las distancias entre conjuntos (enlace simple es el modo más sencillo de calcular las distancias, la más pequeña). Aglomerativa- enlace simple. Si repetimos el mismo ejercicio siempre da el mismo resultado. Al final siempre acabamos con todo metido dentro del mismo conglomerado.
+El **dendograma** es la representación del agrupamiento, abajo distancia pequeña, arriba distancia más alta. arriba del todo tengo que elegir una altura donde cortar, dependiendo donde corte quedaran un numero de grupos.
+que sean suficiente numero de grupos que seas capaces de gestionar para encontrar un patrón de negocio.(grupos de tengan caracteristicas que puedas gestionar).
+
+*Ventajas*: siempre sale igual lo haga yo u otra persona.
+*Desventajas*: elegir el corte, la explotación del modelo, como asigno a una persona nueva a un cluster?? no se puede hacer facilmente. Lanzar de nuevo puede cambiar toda la estructura. Para hacer algo que perdure en el tiempo bien, si hay que meter nuevas obs., esto no vale. Hay variables que no van a cambiar, si te fijas en variables como el saldo, varian en el tiempo, esto no valdrá.
+
+* Cluster particionado k-means:
+
+Se calculan centroides con la media aritmética. tenemos que definir a priori cuantos segmentos tengo que hacer o hago antes un jerárquico para ver si hay bolsas...
+Tengo unos puntos, elijo por ejemplo 2 puntos aleatorios, el resultado depende de la aleatoriedad, primero hay que establecer semilla para que salga algo estable y reproducible (set.seed) se fuerza al ordenador a que tenga un orden secuencial. Pongo el número que quiera en set.seed(1234) luego pongo el mismo y me mantiene el aleatorio.
+
+Tengo dos puntos aleatorios, utilizo la distancia más próxima, me une todos los puntos a estos dos puntos. El algoritmo iterativo intenta afinarse, traslada el punto al centro de masas para optimizar la distancia, ahora vuelve a asignar los puntos mas cercanos. El punto se vuelve a desplazar y así hasta que se estabiliza y ya no rota, los grupos que han quedado son los segmentos. El óptimo puede ser local, si estableciese otra semilla probablemente el resultado sería otro, distintos segmentos. 
+Si me separa en segmentos que no tienen sentidos, vuelvo a lanzarlo o cambio el número de segmentos. Si un punto está muy lejos el centro lo va a mover. 
+
+k-means al final te quedas los centroides, si viene un punto nuevo es más fácil cambiar la distancia, si cambian las variables de los clientes, los segmentos pueden cambiar. Los clientes se irán moviendo, a lo mejor me interesa volver a hacer el cluster.
+
+¿cuantos cluster elegimos? vamos a ir lanzando 1,2,3,4,5 y veremos lo que tiene sentido de negocio. Eso hay que ser capaz de explicarlo. Si en esos vectores tengo edad 42, 213 y 88,5000, la distancia es 46 y 213, hay que normalizar porque sino clasifica en función a la variable que tenga una representación de variables más grande. Aquí solo se usan variables numéricas. 
+
+La forma estándar de normalizar:
+
+(variable - media) / desviacion típica
+
+El problema es si hay alguien con muchos millones.
+
+Técnica robusta:
+
+Cambias media por la mediana, desviación típica por la desviación modal. Después tienes regresiones robustas que evitan que los outlayers te afecten.
+
+Modo de representar el vector que tiene varias variables ----- reducción de dimensionalidad, quiero reducir 40 variables en 3 y no quiero perder info pierdo interpretabilidad. La mayoría de las veces se hacen por problemas técnicos. Se utilizan mucho en machine learning. Para hacer representaciones gráficas es muy útil.
+
+
+Componentes principales (reducción dimensionalidad):
+
+* La matriz de covarianzas: a las varianzas le afecta la escala de las unidades. 
+* Matriz de correlaciones: se utiliza porque es la normalizada. Siempre está entre -1 y 1. Los valores propios son todos positivos y suman 1,los puedo ordenar, me da la variabilidad, si me quedo con las primeras filas de cada matriz me va a dar muy parecido porque cojo los valores más altos, casi suman 1. En lugar de 40 dimensiones me quedan 4. Las variables que elegimos son ortogonales (independientes entre si).
+
+*Mayores aplicaciones*: compresión de ficheros, conforme los primeros valores son más altos (mayor variabilidad posible), mejor es la reducción de dimensión.
+
+---------------------------------------------------------------------------
+HAY QUE PLANTEAR LAS HIPOTESIS PRIMERO Y DEPUÉS COMPROBAR CON OTRO CONJUNTO
+FRAMINGHAM ---- DATOS SOBRE COLESTEROL
+---------------------------------------------------------------------------
+
+En los contrastes de hipotesis tu fijas el nivel de confianza
+
+## Librerias
+```{r}
+library(dummies)
+```
+#CLUSTERING JERARQUICO: NETFLIX MOVIELENS
+
+##Carga de Datos
+```{r}
+movies = read.table("movies.txt",header=TRUE, sep="|",quote="\"")
+```
+
+clasifica las peliculas en funcion del género
+Accion 0 o 1 si es de acción la pelicula, una pelicula puede tener varias agrupaciones
+
+##Análisis Dataset
+
+```{r}
+str(movies)
+head(movies)
+tail(movies)
+```
+```{r}
+table(movies$Comedy)
+table(movies$Western)
+table(movies$Romance, movies$Drama)
+```
+Cruzamos romances y drama, hay 97 que son romances y drama a la vez.
+Si tienes nulos les puedes dar un valor extremo, lo normal es quitarlo, relleno con medios, medianos o KNN, o los que dan problema
+Los voy a clasificar de forma distinta, en un grupo a parte. En la medida de lo posible que no haya datos nulos.
+
+##Cálculo de distancias
+
+No normalizamos porque es 1 y 0, podría normalizar si quiero darle el mismo peso a todas las categorias. Si pondero aquellas que tienen más peliculas. Aquí no tengo el mismo numero de comedias, ni de romanticas.... el peso no es el mismo.
+
+###Cálculo las distancias en las columnas de la 2 a la 20
+
+In mathematics, the Euclidean distance or Euclidean metric is the "ordinary" (i.e. straight-line) distance between two points in Euclidean space
+
+In general, for an n-dimensional space, the distance is
+
+d(p,q)={sqrt {(p1-q1)^2+(p2-q2)^2+....+(pi-qi)^2+.... +(pn-qn)^2}
+
+Squared Euclidean distance
+
+The standard Euclidean distance can be squared in order to place progressively greater weight on objects that are farther apart. In this case, the equation becomes
+
+ d^2(p,q)=(p1-q1)^2+(p2-q2)^2+....+(pi-qi)^2+.... +(pn-qn)^2
+
+```{r}
+distances = dist(movies[2:20], method = "euclidean")
+dim(movies)
+```
+
+
+##Clustering Jerárquico
+```{r}
+clusterMovies = hclust(distances, method = "ward.D")#cluster jerárquico, hclust es solo jerárquico
+clusterMovies#1664 objects
+
+dev.off()
+plot(clusterMovies) # es el Dendrogram,aqui ayuda poco porque hay muchos registros 1664
+
+rect.hclust(clusterMovies, k=2, border="yellow")
+rect.hclust(clusterMovies, k=3, border="blue")
+rect.hclust(clusterMovies, k=4, border="green")
+
+
+NumCluster=10
+
+rect.hclust(clusterMovies, k=NumCluster, border="red")#recta en los 10 clusters
+
+movies$clusterGroups = cutree(clusterMovies, k = NumCluster)# en la nueva columna te dice a que cluster pertenece
+#cada registro
+head(movies)
+```
+
+##Análisis de Clusters
+
+Los clusters no tiene el mismo número de registros
+```{r}
+table(movies$clusterGroups) # cuantos registro hay en cada cluster
+```
+```{r}
+tapply(movies$Action, movies$clusterGroups, mean)# las peliculas de accion en que cluster estan, en el cluster 2 #el 78% las peliculas son de accion
+tapply(movies$Adventure, movies$clusterGroups, mean)
+tapply(movies$Animation, movies$clusterGroups, mean)
+tapply(movies$Childrens, movies$clusterGroups, mean)
+tapply(movies$Comedy, movies$clusterGroups, mean)#el 5 el 7 y el 9 son comedias
+tapply(movies$Crime, movies$clusterGroups, mean)#en el 3 es crimen esta relacionada con accion
+tapply(movies$Documentary, movies$clusterGroups, mean)# el 8 son documentales
+tapply(movies$Drama, movies$clusterGroups, mean)#4 drama, 6 drama
+```
+```{r}
+aggregate(.~clusterGroups,FUN=mean, data=movies)
+```
+Agregado, se puede usar para recomendar, esto permite definir las categorias. Drama-romantico, drama-comedia. Estos datos son de Netflix
+
+##Búsqueda Películas
+```{r}
+subset(movies, Title=="Men in Black (1997)")# sale en el 2,accion, aventura....
+```
+```{r}
+cluster2 = subset(movies, movies$clusterGroups==2) #peliculas con cluster 2
+cluster7 = subset(movies, movies$clusterGroups==7)
+cluster2$Title[1:10]#titulos cluster 2
+cluster7$Title[1:10]
+```
+
+#Clustering K-means
+
+##Carga de datos
+```{r}
+creditos <- read.csv("creditos.csv",stringsAsFactors = FALSE)
+```
+
+##Revisión dataset
+```{r}
+str(creditos)
+head(creditos)
+summary(creditos)
+```
+veo las variables, si quiero clasificar por Balance. si no quiero clasificar los cluster por edad, para que 
+quiero esa variable, lo standar escalar y hacer cluster, meto todas las variables o una parte?
+Estamos en no supervisado, no tienes una variable que quieras predecir.
+coges los datos --- escalar---segmentas---interpretas
+
+##Tratamiento Variables
+```{r}
+creditosNumericos=dummy.data.frame(creditos, dummy.class="character" )
+```
+todos los que has puesto de la clase character me cargo la categórica y la transforma en dummies
+
+##Segmentación mediante Modelo RFM 12M
+```{r}
+creditosScaled <- scale(creditosNumericos)
+NUM_CLUSTERS <- 8
+set.seed(1234)#pongo semilla para que al hacer el table siempre salga le mismo.
+Modelo <- kmeans(creditosScaled,NUM_CLUSTERS)
+creditos$Segmentos <- Modelo$cluster #añado a creditos el número de cluster, hay 8
+creditosNumericos$Segmentos <- Modelo$cluster
+table(creditosNumericos$Segmentos)
+```
+```{r}
+aggregate(creditosNumericos, by = list(creditosNumericos$Segmentos), mean)
+```
+##Definimos los conjuntos
+
+* Grupo 1: Casados - asiáticos
+* Grupo 2: Hombres - Solteros 
+* Grupo 3: Hombres - casados
+* Grupo 4: Mujeres - Afroamericanas
+* Grupo 5: Mujeres - solteras
+* Grupo 6: Mujeres y Hombres, casadas y solteras con mayores ingresos y saldo en cuenta
+* Grupo 7: Hipotecados
+* Grupo 8: Mujeres - solteras - Caucasianas
+
+##Elegir el número de Clústers
+
+##Metodo de seleccion de numero de clusters (Elbow Method)
+
+calculo la distancia entre unos segmentos y otros e intento calcular el mínimo.
+```{r}
+Intra <- (nrow(creditosNumericos)-1)*sum(apply(creditosNumericos,2,var))
+for (i in 2:15) Intra[i] <- sum(kmeans(creditosNumericos, centers=i)$withinss)
+plot(1:15, Intra, type="b", xlab="Numero de Clusters", ylab="Suma de Errores intragrupo")
+```
+A partir de 3 o 4 empieza a no mejorar...a lo mejor te quedas corto con 3 grupos.
+
+
+#Reducción Dimensionalidad
+
+##Carga de datos
+
+```{r}
+coches=mtcars # Base de datos ejemplo en R
+```
+## -------------------------------------------------------------------------
+
+##### 15. Bloque de revisiÃ³n basica del dataset #####
+
+str(coches)
+head(coches)
+summary(coches)
+
+## -------------------------------------------------------------------------
+
+##### 16. Bloque de modelo lineal #####
+#mpg consumo
+modelo_bruto=lm(mpg~.,data=coches)
+summary(modelo_bruto)
+#nada afecta, pero todas las variables representan el 0.869 del consumo. hay multivariabilidad.
+cor(coches)#son muy altar las correlaciones, hay un problemon....
+
+## -------------------------------------------------------------------------
+
+##### 17. Bloque de modelos univariables #####
+
+modelo1=lm(mpg~cyl,data=coches)#cilindros explica el 0.7262
+summary(modelo1)
+modelo2=lm(mpg~disp,data=coches)
+summary(modelo2)
+modelo3=lm(mpg~hp,data=coches)
+summary(modelo3)
+modelo4=lm(mpg~drat,data=coches)
+summary(modelo4)
+modelo5=lm(mpg~wt,data=coches)
+summary(modelo5)
+modelo6=lm(mpg~qsec,data=coches)
+summary(modelo6)
+modelo7=lm(mpg~vs,data=coches)
+summary(modelo7)
+modelo8=lm(mpg~am,data=coches)
+summary(modelo8)
+modelo9=lm(mpg~gear,data=coches)
+summary(modelo9)
+modelo10=lm(mpg~carb,data=coches)
+summary(modelo10)
+
+cor(coches)
+
+## -------------------------------------------------------------------------
+
+##### 18. Bloque de Ejercicio #####
+
+## Â¿QuÃ© modelo de regresiÃ³n lineal realizarÃ???as?
+colnames(coches)
+modelo11=lm(mpg~ cyl+wt+carb,data=coches)#busco el que tiene el r^2 ajustado, puede haber 20 o 30 modelos que al final funcionaría.
+summary(modelo11)
+
+
+## -------------------------------------------------------------------------
+
+##### 19. Bloque de Analisis de Componentes Principales #####
+
+PCA<-prcomp(coches[,-c(1)],scale. = TRUE)
+#he cambiado la matriz que tenia y tengo 10 nuevas variables, la primera variable tiene variabilidad de 2.4, con las
+#3 primeras variables tengo el 90% de la variabilidad. No sabemos que es la variable 1.
+summary(PCA)
+plot(PCA)
+
+## -------------------------------------------------------------------------
+
+##### 20. Bloque de ortogonalidad de componentes principales #####
+
+cor(coches)
+cor(PCA$x)
+
+## -------------------------------------------------------------------------
+
+##### 21. Bloque de representacion grafica mediante componentes principales #####
+
+biplot(PCA)#los registros ya los tengo en su sitio, veo que relacion tiene PC1 con las variables, no se que es porque es mezcla de variables.
+
+PCA$rotation#son las variables, como se relaciona con cada variable.
+
+## -------------------------------------------------------------------------
+
+##### 22. Bloque de creacion de variables componentes principales #####
+
+coches$PCA1=PCA$x[,1]
+coches$PCA2=PCA$x[,2]
+coches$PCA3=PCA$x[,3]
+
+## -------------------------------------------------------------------------
+
+##### 23. Bloque de regresion lineal con componentes principales #####
+
+modelo_PCA=lm(mpg~PCA1,data=coches)
+summary(modelo_PCA)
+
+modelo_PCA=lm(mpg~PCA$x,data=coches)#las pongo todas, sale lo de antes porque lo meto todo
+summary(modelo_PCA)
+
+modelo_PCA=lm(mpg~PCA1+PCA3,data=coches)#tengo casi toda la representacion
+summary(modelo_PCA)
+
+biplot(PCA,choices=c(1,3))#hacia un sentido y hacia el otro es lo contrario
+
+## -------------------------------------------------------------------------
+##       PARTE 4: CLUSTERING K-MEANS Y PCA. SAMSUNG MOBILITY DATA
+## -------------------------------------------------------------------------
+
+## -------------------------------------------------------------------------
+
+##### 24 Bloque de inicializacion de librerias y establecimiento de directorio #####
+
+library(ggplot2)
+library(effects)
+library(plyr)
+
+## -------------------------------------------------------------------------
+
+##### 25. Bloque de carga de Datos #####
+
+load("samsungData.rda")
+
+## -------------------------------------------------------------------------
+
+##### 26. Bloque de analisis preliminar del dataset #####
+
+str(samsungData)
+head(samsungData)
+tail(samsungData)
+
+table(samsungData$activity)
+str(samsungData[,c(562,563)])
+#hay que reducir las variables porque hay 563, haremos un PCA
+## -------------------------------------------------------------------------
+
+##### 27. Bloque de segmentacion kmeans #####
+
+samsungScaled=scale(samsungData[,-c(562,563)])#menos las dos ultimas
+
+set.seed(1234)
+kClust1 <- kmeans(samsungScaled,centers=8)
+
+table(kClust1$cluster,samsungData[,563])
+
+nombres8<-c("walkup","laying","walkdown","laying","standing","sitting","laying","walkdown")
+
+Error8=(length(samsungData[,563])-sum(nombres8[kClust1$cluster]==samsungData[,563]))/length(samsungData[,563])
+
+Error8
+
+## CLuster con 10 centros.
+set.seed(1234)
+kClust1 <- kmeans(samsungScaled,centers=10)
+
+table(kClust1$cluster,samsungData[,563])
+
+nombres10<-c("walkup","laying","walkdown","sitting","standing","laying","laying","walkdown","sitting","walkup")
+
+Error10=(length(samsungData[,563])-sum(nombres10[kClust1$cluster]==samsungData[,563]))/length(samsungData[,563])
+
+Error10
+
+## -------------------------------------------------------------------------
+
+##### 28. Bloque de PCA #####
+
+PCA<-prcomp(samsungData[,-c(562,563)],scale=TRUE)
+#PCA$rotation
+#attributes(PCA)
+summary(PCA)
+plot(PCA)#casi con una variable represento toda la poblacion
+PCA$x[,1:3]
+
+dev.off()
+par(mfrow=c(1,3))
+plot(PCA$x[,c(1,2)],col=as.numeric(as.factor(samsungData[,563])))#primera con respecto a segunda,tres colores van en positivo y tres van en negativo,si llega uno nuevo se en que grupo lo meteré
+#en dos clusters los podría separar después de ver éste gráfico. PC1>0 y PC!<0
+plot(PCA$x[,c(2,3)],col=as.numeric(as.factor(samsungData[,563])))
+#no le tenemos que intentar buscar sentido a los ejes
+plot(PCA$x[,c(1,3)],col=as.numeric(as.factor(samsungData[,563])))
+
+par(mfrow=c(1,1))
+plot(PCA$x[,c(1,2)],col=as.numeric(as.factor(samsungData[,563])))
+
+## -------------------------------------------------------------------------
