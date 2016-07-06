@@ -803,6 +803,7 @@ Análisis del Modelo
 
     plot(modeloFinal$residuals)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-32-1.png)
 
     hist(modeloFinal$residuals)
@@ -812,6 +813,17 @@ Análisis del Modelo
     qqnorm(modeloFinal$residuals); qqline(modeloFinal$residuals,col=2)
 
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-34-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-25-1.png)
+
+    hist(modeloFinal$residuals)
+
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-26-1.png)
+
+    qqnorm(modeloFinal$residuals); qqline(modeloFinal$residuals,col=2)
+
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-27-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 Gráfico de percentiles tienen que estar todos en la recta si es normal
 vemos que en las colas hay problemas. No vale la regressión lineal, no
 es insesgada,el valor de la poblacion no se estima de manera exacta con
@@ -850,14 +862,22 @@ hay diferencias en las pendientes, por eso sale significativa mortgage
     ggplot(creditos, aes(x = Rating, y = Income)) + geom_point() + facet_grid(~ Mortgage) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-37-1.png) mas
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-30-1.png) mas
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 o menos todas se solapan por eso en el modelo no son significativas, no
 es conjunto aquí no tenemos en cuenta el resto de variables
 
     ggplot(creditos, aes(x = Rating, y = Income)) + geom_point() + facet_grid(~ Ethnicity) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-38-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-31-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 
     ggplot(creditos, aes(x = Balance, y = Income)) + geom_point() + facet_grid(~ Mortgage) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
@@ -865,7 +885,11 @@ es conjunto aquí no tenemos en cuenta el resto de variables
     ggplot(creditos, aes(x = Balance, y = Income)) + geom_point() + facet_grid(~ Ethnicity) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-39-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-32-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 
 Análisis de interacciones
 -------------------------
@@ -962,24 +986,40 @@ el raiting 0.39
     efecto1 <- effect("Rating*Mortgage", modeloInter1, xlevels = 10)
     plot(efecto1)#la diferencia es que aqui le metes el modelo, con lo que le metes las 
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-43-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-36-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 
     #relaciones con todas las variables
 
     efecto2 <- effect("Balance*Mortgage", modeloInter1, xlevels = 10)
     plot(efecto2)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-44-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-37-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 
     efecto3 <- effect("Rating*Mortgage", modeloInter2, xlevels = 10)
     plot(efecto3)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-45-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-38-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 
     efecto4 <- effect("Rating:Mortgage", modeloInter3, xlevels = 10)
     plot(efecto4)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-46-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-39-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 
     modeloInter5=lm(Income ~ Rating*Mortgage, data = creditos)
     summary(modeloInter5)
@@ -1010,7 +1050,11 @@ Aquí la hipoteca no representa nada en el Income
     efecto5 <- effect("Rating*Mortgage", modeloInter5, xlevels = 10)
     plot(efecto5)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-48-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-41-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 
 Analisis de variable Balance
 ----------------------------
@@ -1601,7 +1645,11 @@ Diferencia entre el logit y el probit
     plot(sigmoide,type="l",col="red")
     lines(cumulative,col="blue")
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-59-1.png) la
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-52-1.png) la
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 roja es la sigmoide, es menos rigida. la azul se usa cuando quieres muy
 fiables y muy sensibles(medicina)
 
@@ -1632,7 +1680,11 @@ me puede dar el resultado despues de aplicar el sigmoide
     abline(a=0,b=1)
     abline(v=0.5)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-63-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-56-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 cuando corte en la curva estoy capturando el 0.5 de los positivos y el
 0.1 de los negativos
 
@@ -1863,7 +1915,11 @@ Modelos Regresión de Poisson
 
     hist(BICIS$cnt)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-76-1.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-69-1.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 
     mean(BICIS$cnt)
 
@@ -1934,7 +1990,11 @@ registered
 
     plot(model_poisson)
 
+<<<<<<< HEAD
 ![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-77-1.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-77-2.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-77-3.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-77-4.png)
+=======
+![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-70-1.png)![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-70-2.png)![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-70-3.png)![](https://github.com/MontseFigueiro/Regresion_Lineal_Logistica/blob/master/figure-markdown_strict/unnamed-chunk-70-4.png)
+>>>>>>> 3091c7410a0e942b323062af048dac4c00339a2d
 
 Todas las variables son significativas menos temp.
 
