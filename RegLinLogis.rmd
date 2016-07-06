@@ -2,7 +2,7 @@
 title: "Regresión Lineal Logística"
 author: "Montse Figueiro"
 date: "28 de junio de 2016"
-output: md_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -124,7 +124,16 @@ summary(creditos)
 ```{r}
 head(creditos)
 t.test(Income ~ Gender, data = creditos)#p-value=0.7345 t=0.3395,mean female=43,46, male=44,8
+#conf.level=0.95 si quisieramos indicar otro nivel.
 ```
+
+P-value calculo, pt(x,df) returns the area under the density to the left of x. 
+
+```{r}
+p.value = 2*pt(-abs(0.3395), df=284.51)
+p.value
+```
+male$Income
 calculo t-student:
 ```{r}
 male <- creditos[creditos$Gender==" Male",]
@@ -137,6 +146,32 @@ var1 <- var(male$Income)
 var2 <- var(female$Income)
 ds1 <- sd(male$Income)# 33.43763
 ds2 <- sd(female$Income)
+```
+```{r}
+hist(creditos$Income)
+```
+Plot Densidad de Income
+```{r}
+plot(density(creditos$Income))
+```
+Densidad del Income por Gender
+```{r}
+library(ggplot2)
+qplot(creditos$Income, colour=factor(creditos$Gender), data=creditos, geom="density",main="Income Density by Gender")
+```
+max(female$Income)
+max(male$Income)
+##Test Normalidad Anderson
+The test rejects the hypothesis of normality when the p-value is less than or equal to 0.05
+```{r}
+library(kSamples)
+ad.test(male$Income,female$Income)
+```
+```{r}
+qqnorm(male$Income)
+qqnorm(female$Income)
+hist(male$Income,breaks=100)
+hist(female$Income,breaks=100)
 ```
 ###Cálculo T-student 1:
 Diferentes tamaños muestrales, iguales varianzas:
@@ -162,6 +197,9 @@ En este caso, el R² es simplemente el cuadrado del coeficiente de correlación de
 ```{r}
 modeloT=lm(Income ~ Gender, data = creditos)
 summary(modeloT)
+```
+```{r}
+plot(modeloT)
 ```
 
 Recta de regresión es y= 44.802 - 1.335*x (x=1 cuando es mujer, 0 cuando es hombre)

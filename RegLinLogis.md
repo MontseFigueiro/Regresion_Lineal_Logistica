@@ -266,7 +266,17 @@ que 11 que he terminado.(eso sería tratarlo como una variable continua)
     ##  mean in group  Male mean in group Female 
     ##             44.80207             43.46693
 
-calculo t-student:
+    #conf.level=0.95 si quisieramos indicar otro nivel.
+
+P-value calculo, pt(x,df) returns the area under the density to the left
+of x.
+
+    p.value = 2*pt(-abs(0.3395), df=284.51)
+    p.value
+
+    ## [1] 0.7344836
+
+male$Income calculo t-student:
 
     male <- creditos[creditos$Gender==" Male",]
     female <- creditos[creditos$Gender=="Female",]
@@ -279,9 +289,66 @@ calculo t-student:
     ds1 <- sd(male$Income)# 33.43763
     ds2 <- sd(female$Income)
 
-### Cálculo T-student 1:
+    hist(creditos$Income)
 
-Diferentes tamaños muestrales, iguales varianzas:
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-8-1.png) Plot
+Densidad de Income
+
+    plot(density(creditos$Income))
+
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-9-1.png)
+Densidad del Income por Gender
+
+    library(ggplot2)
+    qplot(creditos$Income, colour=factor(creditos$Gender), data=creditos, geom="density",main="Income Density by Gender")
+
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-10-1.png)
+max(female*I**n**c**o**m**e*)*m**a**x*(*m**a**l**e*Income) \#\#Test
+Normalidad Anderson The test rejects the hypothesis of normality when
+the p-value is less than or equal to 0.05
+
+    library(kSamples)
+
+    ## Loading required package: SuppDists
+
+    ad.test(male$Income,female$Income)
+
+    ## 
+    ## 
+    ##  Anderson-Darling k-sample test.
+    ## 
+    ## Number of samples:  2
+    ## Sample sizes:  132, 168
+    ## Number of ties: 0
+    ## 
+    ## Mean of  Anderson-Darling  Criterion: 1
+    ## Standard deviation of  Anderson-Darling  Criterion: 0.75657
+    ## 
+    ## T.AD = ( Anderson-Darling  Criterion - mean)/sigma
+    ## 
+    ## Null Hypothesis: All samples come from a common population.
+    ## 
+    ##                AD    T.AD  asympt. P-value
+    ## version 1: 0.7257 -0.3625           0.5386
+    ## version 2: 0.7230 -0.3656           0.5404
+
+    qqnorm(male$Income)
+
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-12-1.png)
+
+    qqnorm(female$Income)
+
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-12-2.png)
+
+    hist(male$Income,breaks=100)
+
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-12-3.png)
+
+    hist(female$Income,breaks=100)
+
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-12-4.png)
+\#\#\#Cálculo T-student 1: Diferentes tamaños muestrales, iguales
+varianzas:
 
     sxx <- sqrt((((n1-1)*var1)+((n2-1)*var2))/(n1+n2-2))
     raiz <- sqrt((1/n1)+(1/n2))
@@ -328,6 +395,10 @@ regresión lineal simple
     ## Residual standard error: 33.91 on 298 degrees of freedom
     ## Multiple R-squared:  0.0003843,  Adjusted R-squared:  -0.00297 
     ## F-statistic: 0.1146 on 1 and 298 DF,  p-value: 0.7352
+
+    plot(modeloT)
+
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-16-1.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-16-2.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-16-3.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-16-4.png)
 
 Recta de regresión es y= 44.802 - 1.335\*x (x=1 cuando es mujer, 0
 cuando es hombre) std-error= 2.952 p-value=0.7352 cuando x=1, y =43,46
@@ -732,15 +803,15 @@ Análisis del Modelo
 
     plot(modeloFinal$residuals)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-25-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-32-1.png)
 
     hist(modeloFinal$residuals)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-26-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-33-1.png)
 
     qqnorm(modeloFinal$residuals); qqline(modeloFinal$residuals,col=2)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-27-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-34-1.png)
 Gráfico de percentiles tienen que estar todos en la recta si es normal
 vemos que en las colas hay problemas. No vale la regressión lineal, no
 es insesgada,el valor de la poblacion no se estima de manera exacta con
@@ -779,14 +850,14 @@ hay diferencias en las pendientes, por eso sale significativa mortgage
     ggplot(creditos, aes(x = Rating, y = Income)) + geom_point() + facet_grid(~ Mortgage) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-30-1.png) mas
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-37-1.png) mas
 o menos todas se solapan por eso en el modelo no son significativas, no
 es conjunto aquí no tenemos en cuenta el resto de variables
 
     ggplot(creditos, aes(x = Rating, y = Income)) + geom_point() + facet_grid(~ Ethnicity) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-31-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-38-1.png)
 
     ggplot(creditos, aes(x = Balance, y = Income)) + geom_point() + facet_grid(~ Mortgage) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
@@ -794,7 +865,7 @@ es conjunto aquí no tenemos en cuenta el resto de variables
     ggplot(creditos, aes(x = Balance, y = Income)) + geom_point() + facet_grid(~ Ethnicity) + 
       geom_smooth(method = "lm", se=TRUE, color="red", formula = y ~ x)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-32-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-39-1.png)
 
 Análisis de interacciones
 -------------------------
@@ -891,24 +962,24 @@ el raiting 0.39
     efecto1 <- effect("Rating*Mortgage", modeloInter1, xlevels = 10)
     plot(efecto1)#la diferencia es que aqui le metes el modelo, con lo que le metes las 
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-36-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-43-1.png)
 
     #relaciones con todas las variables
 
     efecto2 <- effect("Balance*Mortgage", modeloInter1, xlevels = 10)
     plot(efecto2)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-37-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-44-1.png)
 
     efecto3 <- effect("Rating*Mortgage", modeloInter2, xlevels = 10)
     plot(efecto3)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-38-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-45-1.png)
 
     efecto4 <- effect("Rating:Mortgage", modeloInter3, xlevels = 10)
     plot(efecto4)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-39-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-46-1.png)
 
     modeloInter5=lm(Income ~ Rating*Mortgage, data = creditos)
     summary(modeloInter5)
@@ -939,7 +1010,7 @@ Aquí la hipoteca no representa nada en el Income
     efecto5 <- effect("Rating*Mortgage", modeloInter5, xlevels = 10)
     plot(efecto5)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-41-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-48-1.png)
 
 Analisis de variable Balance
 ----------------------------
@@ -1530,7 +1601,7 @@ Diferencia entre el logit y el probit
     plot(sigmoide,type="l",col="red")
     lines(cumulative,col="blue")
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-52-1.png) la
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-59-1.png) la
 roja es la sigmoide, es menos rigida. la azul se usa cuando quieres muy
 fiables y muy sensibles(medicina)
 
@@ -1561,7 +1632,7 @@ me puede dar el resultado despues de aplicar el sigmoide
     abline(a=0,b=1)
     abline(v=0.5)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-56-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-63-1.png)
 cuando corte en la curva estoy capturando el 0.5 de los positivos y el
 0.1 de los negativos
 
@@ -1792,7 +1863,7 @@ Modelos Regresión de Poisson
 
     hist(BICIS$cnt)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-69-1.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-76-1.png)
 
     mean(BICIS$cnt)
 
@@ -1863,7 +1934,7 @@ registered
 
     plot(model_poisson)
 
-![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-70-1.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-70-2.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-70-3.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-70-4.png)
+![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-77-1.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-77-2.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-77-3.png)![](RegLinLogis_files/figure-markdown_strict/unnamed-chunk-77-4.png)
 
 Todas las variables son significativas menos temp.
 
